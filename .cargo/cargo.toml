@@ -1,0 +1,10 @@
+[build]
+target = "riscv32i-unknown-none-elf"
+
+[target.riscv32i-unknown-none-elf]
+runner = "$HOME/tools/qemu-riscv32-8.1.2/bin/qemu-system-riscv32 \
+          -machine virt -bios opensbi-riscv32-generic-fw_dynamic.bin -nographic -serial mon:stdio --no-reboot \
+          -kernel "
+rustflags = [
+  "-C", "link-arg=-Tlinker.ld",
+]

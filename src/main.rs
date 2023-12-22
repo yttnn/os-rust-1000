@@ -8,9 +8,8 @@ pub extern  "C" fn boot() -> ! {
   loop {}
 }
 
-use core::panic::PanicInfo;
 #[panic_handler]
 #[no_mangle]
-pub fn panic(_info: &PanicInfo) -> ! {
+pub fn panic(_info: &core::panic::PanicInfo) -> ! {
   loop {}
 }
