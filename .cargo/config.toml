@@ -2,15 +2,6 @@
 target = "riscv32i-unknown-none-elf"
 
 [target.riscv32i-unknown-none-elf]
-runner = """
-  qemu-system-riscv32
-  -machine virt
-  -bios opensbi-riscv32-generic-fw_dynamic.bin
-  -nographic
-  -serial mon:stdio
-  --no-reboot
-  -kernel 
-"""
 rustflags = [
   "-C", "link-arg=-Tkernel.ld",
 ]
