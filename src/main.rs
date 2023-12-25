@@ -13,7 +13,7 @@ extern "C" {
 
 #[no_mangle]
 #[link_section = ".text.boot"]
-pub unsafe extern  "C" fn boot() -> ! {
+pub unsafe extern "C" fn boot() -> ! {
   asm!(
     "mv sp, {stack_top}",
     "j {kernel_main}",
