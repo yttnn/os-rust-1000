@@ -32,10 +32,8 @@ fn kernel_main() -> ! {
     write_bytes(&mut __bss as *mut u8, 0, bss_size);
   }
 
-  let s = "\nHello World!!\n";
-  for i in s.chars() {
-    print::putchar(i);
-  }
+  print!("hoge\n");
+  println!("Hello World!");
 
   loop {}
 }
