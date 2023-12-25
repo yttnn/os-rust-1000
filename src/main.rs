@@ -34,12 +34,15 @@ fn kernel_main() -> ! {
 
   print!("hoge\n");
   println!("Hello World!");
+  panic!();
+  unreachable!();
 
   loop {}
 }
 
 #[panic_handler]
 #[no_mangle]
-pub fn panic(_info: &core::panic::PanicInfo) -> ! {
+pub fn panic(info: &core::panic::PanicInfo) -> ! {
+  println!("{}", info);
   loop {}
 }
