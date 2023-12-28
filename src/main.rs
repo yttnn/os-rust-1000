@@ -3,6 +3,7 @@
 
 use core::{arch::asm, ptr::write_bytes};
 mod print;
+mod trap;
 
 extern "C" {
   static __stack_top: u8;
@@ -13,7 +14,7 @@ extern "C" {
 
 #[no_mangle]
 #[link_section = ".text.boot"]
-pub unsafe extern  "C" fn boot() -> ! {
+pub unsafe extern "C" fn boot() -> ! {
   asm!(
     "mv sp, {stack_top}",
     "j {kernel_main}",
@@ -32,10 +33,10 @@ fn kernel_main() -> ! {
     write_bytes(&mut __bss as *mut u8, 0, bss_size);
   }
 
-  print!("hoge\n");
-  println!("Hello World!");
-  panic!();
-  unreachable!();
+  unsafe {
+    asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
+    asm!("unimp");
+  }
 
   loop {}
 }
