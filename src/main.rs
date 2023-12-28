@@ -10,6 +10,7 @@ extern "C" {
   static __bss_end: u8;
 }
 
+#[derive(Debug)]
 #[repr(C, packed)]
 struct TrapFrame {
   ra: u32,
@@ -54,7 +55,7 @@ extern "C" fn handle_trap(frame: TrapFrame) {
     asm!("csrr {}, stval", out(reg) stval);
     asm!("csrr {}, sepc", out(reg) sepc);
   }
-  panic!("unexpected trap scause={:x}, stval={:x}, sepc={:x}\n", scause, stval, sepc);
+  panic!("unexpected trap scause={:x}, stval={:x}, sepc={:x}\n frame: {:x?}", scause, stval, sepc, frame);
 }
 
 extern "C" fn kernel_entry() {
