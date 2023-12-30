@@ -38,7 +38,7 @@ fn kernel_main() -> ! {
 
   let mut v = alloc::vec::Vec::new();
   v.push(42);
-  println!("{:?}", v);
+  println!("{:p}", v.as_ptr());
 
   // unsafe {
   //   asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
