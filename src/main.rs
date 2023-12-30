@@ -1,9 +1,12 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+
 use core::{arch::asm, ptr::write_bytes};
 mod print;
 mod trap;
+mod allocator;
 
 extern "C" {
   static __stack_top: u8;
@@ -33,10 +36,14 @@ fn kernel_main() -> ! {
     write_bytes(&mut __bss as *mut u8, 0, bss_size);
   }
 
-  unsafe {
-    asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
-    asm!("unimp");
-  }
+  let mut v = alloc::vec::Vec::new();
+  v.push(42);
+  println!("{:p}", v.as_ptr());
+
+  // unsafe {
+  //   asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
+  //   asm!("unimp");
+  // }
 
   loop {}
 }
