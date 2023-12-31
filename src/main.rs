@@ -4,9 +4,9 @@
 extern crate alloc;
 
 use core::{arch::asm, ptr::write_bytes};
-mod print;
-mod trap;
-mod allocator;
+use os_rust_1000::allocator;
+use os_rust_1000::println;
+use os_rust_1000::trap;
 
 extern "C" {
   static __stack_top: u8;
