@@ -5,7 +5,9 @@ extern crate alloc;
 
 use core::{arch::asm, ptr::write_bytes};
 use os_rust_1000::allocator;
+use os_rust_1000::print::putchar;
 use os_rust_1000::println;
+use os_rust_1000::process::{Process, ProcessManager};
 use os_rust_1000::trap;
 
 extern "C" {
@@ -36,14 +38,13 @@ fn kernel_main() -> ! {
     write_bytes(&mut __bss as *mut u8, 0, bss_size);
   }
 
-  let mut v = alloc::vec::Vec::new();
-  v.push(42);
-  println!("{:p}", v.as_ptr());
+  let procs = ProcessManager::new();
 
-  // unsafe {
-  //   asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
-  //   asm!("unimp");
-  // }
+  unsafe {
+    asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
+  }
+
+  procs.run();
 
   loop {}
 }
