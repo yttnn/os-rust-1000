@@ -4,10 +4,8 @@
 extern crate alloc;
 
 use core::{arch::asm, ptr::write_bytes};
-use os_rust_1000::allocator;
-use os_rust_1000::print::putchar;
 use os_rust_1000::println;
-use os_rust_1000::process::{Process, ProcessManager};
+use os_rust_1000::process::ProcessManager;
 use os_rust_1000::trap;
 
 extern "C" {

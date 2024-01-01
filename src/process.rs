@@ -51,9 +51,10 @@ impl ProcessManager {
     for i in &self.procs {
       println!("{:?}", i);
     }
-    
+    let mut c0 = Context::new();
+    let c1 = Context::new();
     unsafe {
-      switch::switch_context(&mut self.procs[0].context.get(), &self.procs[1].context.get());
+      switch::switch_context(&mut c0, &c1);
     }
 
     for i in &self.procs {
@@ -101,30 +102,30 @@ impl Process {
   }
 }
 
-unsafe fn proc_a_entry() {
-  println!("starting process A");
-  loop {
-    putchar('A');
+// unsafe fn proc_a_entry() {
+//   println!("starting process A");
+//   loop {
+//     putchar('A');
 
-    for i in 0..30000000 {
-      asm!("nop");
-    }
-  }
-}
+//     for i in 0..30000000 {
+//       asm!("nop");
+//     }
+//   }
+// }
 
-unsafe fn proc_b_entry() {
-  println!("starting process B");
-  loop {
-    putchar('B');
+// unsafe fn proc_b_entry() {
+//   println!("starting process B");
+//   loop {
+//     putchar('B');
 
-    for i in 0..30000000 {
-      asm!("nop");
-    }
-  }
-}
+//     for i in 0..30000000 {
+//       asm!("nop");
+//     }
+//   }
+// }
 
 #[derive(Debug,Clone, Copy)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct Context {
   pub ra: u32,
   pub sp: u32,
