@@ -1,13 +1,12 @@
 use core::arch::asm;
 
-use crate::{process::Context, println};
+use crate::process::Context;
 
 #[no_mangle]
+#[naked]
 #[allow(unused_variables)]
 pub unsafe extern "C" fn switch_context(prev: &mut Context, next: &Context) {
-  println!("enter");
   asm!(
-    ".balign 4",
     "sw ra,  0  * 4(a0)",
     "sw sp,  1  * 4(a0)",
     "sw s0,  2  * 4(a0)",
@@ -37,5 +36,6 @@ pub unsafe extern "C" fn switch_context(prev: &mut Context, next: &Context) {
     "lw s10, 12 * 4(a1)",
     "lw s11, 13 * 4(a1)",
     "ret",
+    options(noreturn),
   );
 }

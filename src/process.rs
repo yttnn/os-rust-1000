@@ -1,6 +1,6 @@
 use core::{cell::Cell, arch::asm};
 
-use crate::{println, print::putchar, switch};
+use crate::{println, print::putchar, switch::{self, switch_context}};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ProcessState {
@@ -18,8 +18,6 @@ const PROCESS_MAX: usize = 8;
 #[derive(Debug)]
 pub struct ProcessManager {
   procs: [Process; PROCESS_MAX],
-  // proc_a: &mut Process,
-  // proc_b: &mut Process,
 }
 
 impl ProcessManager {
@@ -36,36 +34,18 @@ impl ProcessManager {
         Process::new(6),
         Process::new(7),
       ],
-      // proc_a: &mut Process::new(8),
-      // proc_b: &mut Process::new(8),
     }
   }
 
   pub fn run(&self) {
-    // self.proc_a = self.create_process(proc_a_entry).unwrap();
-    // self.proc_b = self.create_process(proc_b_entry).unwrap();
-    // unsafe {
-    //   proc_a_entry();
-    // }
-
-    for i in &self.procs {
-      println!("{:?}", i);
-    }
-    let mut c0 = Context::new();
-    let c1 = Context::new();
-    unsafe {
-      switch::switch_context(&mut c0, &c1);
-    }
-
-    for i in &self.procs {
-      println!("{:?}", i);
-    }
   }
 
-  pub fn create_process(&self, pc: u32) -> Result<&Process, ProcessError> {
+  pub fn create_process(&self, pc: *const ()) -> Result<&Process, ProcessError> {
     let process = self.find_unused_process();
     if process.is_none() { return Err(ProcessError::FailedToCreateProcess); }
     let process: &Process = process.unwrap();
+
+    process.context.set(Context::new(pc as u32));
     process.state.set(ProcessState::Runnable);
     process.sp.set(0);
     
@@ -81,6 +61,36 @@ impl ProcessManager {
 
     None
   }
+
+  pub fn yield_process() {
+
+  }
+
+  unsafe fn proc_a_entry(&self) {
+    println!("starting process A");
+    loop {
+      putchar('A');
+      // switch_context(self.proc_a.context.get_mut(), self.proc_b.context.get_mut());
+
+      for i in 0..30000000 {
+        asm!("nop");
+      }
+    }
+  }
+
+  unsafe fn proc_b_entry(&self) {
+    println!("starting process B");
+    loop {
+      putchar('B');
+      // switch_context(self.proc_b.context.get_mut(), self.proc_a.context.get_mut());
+
+      for i in 0..30000000 {
+        asm!("nop");
+      }
+    }
+  }
+
+
 }
 
 #[derive(Debug)]
@@ -97,32 +107,10 @@ impl Process {
       pid: pid,
       state: ProcessState::Unused.into(),
       sp: 0.into(),
-      context: Context::new().into(),
+      context: Context::new(0).into(),
     }
   }
 }
-
-// unsafe fn proc_a_entry() {
-//   println!("starting process A");
-//   loop {
-//     putchar('A');
-
-//     for i in 0..30000000 {
-//       asm!("nop");
-//     }
-//   }
-// }
-
-// unsafe fn proc_b_entry() {
-//   println!("starting process B");
-//   loop {
-//     putchar('B');
-
-//     for i in 0..30000000 {
-//       asm!("nop");
-//     }
-//   }
-// }
 
 #[derive(Debug,Clone, Copy)]
 #[repr(C, packed)]
@@ -144,9 +132,9 @@ pub struct Context {
 }
 
 impl Context {
-  pub fn new() -> Self {
+  pub fn new(ra: u32) -> Self {
     Self {
-      ra: 0,
+      ra: ra,
       sp: 0,
       s0: 0,
       s1: 0,

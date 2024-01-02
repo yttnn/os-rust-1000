@@ -49,6 +49,8 @@ extern "C" fn handle_trap(frame: TrapFrame) {
   panic!("unexpected trap scause={:x}, stval={:x}, sepc={:x}\n frame: {:x?}", scause, stval, sepc, frame);
 }
 
+#[naked]
+#[no_mangle]
 pub extern "C" fn kernel_entry() {
   unsafe {
     asm!(
@@ -124,6 +126,7 @@ pub extern "C" fn kernel_entry() {
       "lw sp,  4 * 30(sp)",
       "sret",
       handle_trap = sym handle_trap,
+      options(noreturn),
     );
   }
 }
