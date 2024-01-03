@@ -3,9 +3,11 @@
 
 extern crate alloc;
 
+use core::ptr;
 use core::{arch::asm, ptr::write_bytes};
 use os_rust_1000::println;
-use os_rust_1000::process::ProcessManager;
+use os_rust_1000::print::putchar;
+use os_rust_1000::process;
 use os_rust_1000::trap;
 
 extern "C" {
@@ -14,6 +16,31 @@ extern "C" {
   static __bss_end: u8;
 }
 
+unsafe fn proc_a_entry() {
+  println!("starting process A");
+  loop {
+    putchar('A');
+    // switch_context(self.proc_a.context.get_mut(), self.proc_b.context.get_mut());
+    process::yield_process();
+
+    for _ in 0..30000000 {
+      asm!("nop");
+    }
+  }
+}
+
+unsafe fn proc_b_entry() {
+  println!("starting process B");
+  loop {
+    putchar('B');
+    // switch_context(self.proc_b.context.get_mut(), self.proc_a.context.get_mut());
+    process::yield_process();
+
+    for _ in 0..30000000 {
+      asm!("nop");
+    }
+  }
+}
 
 #[no_mangle]
 #[link_section = ".text.boot"]
@@ -36,13 +63,14 @@ fn kernel_main() -> ! {
     write_bytes(&mut __bss as *mut u8, 0, bss_size);
   }
 
-  let procs = ProcessManager::new();
-
   unsafe {
     asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
+    process::init();
+    process::create_process(proc_a_entry as u32);
+    process::create_process(proc_b_entry as u32);
+    process::yield_process();
   }
 
-  procs.run();
 
   loop {}
 }
