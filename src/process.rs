@@ -1,4 +1,4 @@
-use core:: ptr;
+use core::{ ptr, arch::asm};
 
 use crate::{switch::switch_context, println};
 
@@ -52,6 +52,11 @@ pub unsafe fn yield_process() {
   let next = find_next_process();
   if next.is_none() { println!("next is none"); return; }
   let next = next.unwrap() as *mut Process;
+  asm!(
+    "csrw sscratch, {}",
+    in(reg) ptr::addr_of!((*next).stack[(*next).stack.len() - 1]),
+  );
+
   let prev = CURRENT_PROCESS;
   CURRENT_PROCESS = next;
   

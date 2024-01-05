@@ -55,6 +55,7 @@ pub extern "C" fn kernel_entry() {
   unsafe {
     asm!(
       ".balign 4",
+      "csrrw sp, sscratch, sp", // tmp=sp; sp=sscratch; sscratch=tmp;
       "csrw sscratch, sp",
       "addi sp, sp, -4 * 31",
       "sw ra,  4 * 0(sp)",
@@ -90,6 +91,8 @@ pub extern "C" fn kernel_entry() {
       // ================
       "csrr a0, sscratch",
       "sw a0, 4 * 30(sp)",
+      "addi a0, sp, 4 * 31",
+      "csrw sscratch, a0",
       "mv a0, sp",
       "call {handle_trap}",
       // ================
