@@ -4,9 +4,9 @@
 extern crate alloc;
 
 use core::{arch::asm, ptr::write_bytes};
-mod print;
-mod trap;
-mod allocator;
+use os_rust_1000::println;
+use os_rust_1000::process;
+use os_rust_1000::trap;
 
 extern "C" {
   static __stack_top: u8;
@@ -14,6 +14,29 @@ extern "C" {
   static __bss_end: u8;
 }
 
+unsafe fn proc_a_entry() {
+  println!("starting process A");
+  loop {
+    println!("A");
+    process::yield_process();
+
+    for _ in 0..30000000 {
+      asm!("nop");
+    }
+  }
+}
+
+unsafe fn proc_b_entry() {
+  println!("starting process B");
+  loop {
+    println!("B");
+    process::yield_process();
+
+    for _ in 0..30000000 {
+      asm!("nop");
+    }
+  }
+}
 
 #[no_mangle]
 #[link_section = ".text.boot"]
@@ -36,14 +59,14 @@ fn kernel_main() -> ! {
     write_bytes(&mut __bss as *mut u8, 0, bss_size);
   }
 
-  let mut v = alloc::vec::Vec::new();
-  v.push(42);
-  println!("{:p}", v.as_ptr());
+  unsafe {
+    asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
+    process::init();
+    process::create_process(proc_a_entry as u32).expect("Faild To Create Process");
+    process::create_process(proc_b_entry as u32).expect("Faild To Create Process");
+    process::yield_process();
+  }
 
-  // unsafe {
-  //   asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
-  //   asm!("unimp");
-  // }
 
   loop {}
 }

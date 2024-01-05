@@ -1,7 +1,6 @@
 use core::fmt::{self, Write};
 
-#[path = "./opensbi.rs"]
-mod opensbi;
+use crate::opensbi;
 
 pub fn putchar(ch: char) {
   opensbi::sbi_call(ch as i32, 0, 0, 0, 0, 0, 0, 1);
