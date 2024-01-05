@@ -52,139 +52,24 @@ pub unsafe fn yield_process() {
   let next = find_next_process();
   if next.is_none() { println!("next is none"); return; }
   let next = next.unwrap() as *mut Process;
-  // println!("1 {:?}", *next);
   let prev = CURRENT_PROCESS;
-  // println!("2 {:?}", *next);
   CURRENT_PROCESS = next;
-  // println!("3 {:?}", *next);
-  // println!("yield {}", (*next).pid);
-  // println!("yield [0] pid {}, state {:?}", PROCESS_POOL[0].pid, PROCESS_POOL[0].state);
   
   unsafe {
-    // println!("cur: {:?}", *prev);
-    // println!("next: {:?}", *next);
-    switch_context(&mut (*prev).context, &(*next).context);
+   switch_context(&mut (*prev).context, &(*next).context);
   }
 }
 
 unsafe fn find_next_process() -> Option<&'static mut Process> {
-  // for process in &mut PROCESS_POOL {
-  //   println!("pid {}",process.pid);
-  //   if (*CURRENT_PROCESS).pid == process.pid { continue; }
-  //   if process.state == ProcessState::Runnable && process.pid > 0 {
-  //     return Some(process);
-  //   }
-  // }
   let current_pid = (*CURRENT_PROCESS).pid as usize;
-  // println!("findnext cpid {}", current_pid);
   for i in 0..PROCESS_MAX {
     let process = &mut PROCESS_POOL[(current_pid + i) % PROCESS_MAX];
-    // println!("pid {}, state {:?}", process.pid, process.state);
     if process.state == ProcessState::Runnable && process.pid > 0 {
-      // println!("ret some pid {}, state {:?}", process.pid, process.state);
       return Some(process);
     }
   }
   None
 }
-
-// impl ProcessManager {
-//   pub fn new() -> Self {
-//     Self {
-//       // !?
-//       procs: [
-//         Process::new(0),
-//         Process::new(1),
-//         Process::new(2),
-//         Process::new(3),
-//         Process::new(4),
-//         Process::new(5),
-//         Process::new(6),
-//         Process::new(7),
-//       ],
-//       idle_proc: Process::new(-1),
-//       current_proc: ptr::null_mut(),
-//     }
-//   }
-
-//   pub unsafe fn run(&mut self) {
-//     CURRENT_PROCESS = &mut self.idle_proc as *mut _;
-    
-//   }
-
-//   pub fn create_process(&mut self, pc: unsafe fn()) -> Result<&Process, ProcessError> {
-//     let process = self.find_unused_process();
-//     if process.is_none() { return Err(ProcessError::FailedToCreateProcess); }
-//     let process = process.unwrap();
-
-//     // process.context.set(Context::new(pc as u32));
-//     process.context.ra = pc as u32;
-//     // process.state.set(ProcessState::Runnable);
-//     process.state = ProcessState::Runnable;
-//     // process.sp.set(0);
-//     // process.sp = 0;
-    
-//     Ok(process)
-//   }
-
-//   fn find_unused_process(&mut self) -> Option<&mut Process> {
-//     for process in &mut self.procs {
-//       if process.state == ProcessState::Unused {
-//         return Some(process);
-//       }
-//     }
-
-//     None
-//   }
-
-//   pub unsafe fn yield_process(&mut self) {
-//     let mut next = self.find_runnable_process();
-//     if next.is_none() { return; }
-    
-//     let mut next = next.unwrap() as *mut Process;
-//     let prev = self.current_proc;
-//     self.current_proc = next;
-//     unsafe {
-//       switch_context(&mut (*prev).context, &(*next).context);
-//     }
-//   }
-
-//   fn find_runnable_process(&mut self) -> Option<&mut Process> {
-//     for process in &mut self.procs {
-//       if process.state == ProcessState::Runnable {
-//         return Some(process);
-//       }
-//     }
-
-//     None
-//   }
-
-  // unsafe fn proc_a_entry(&mut self) {
-  //   println!("starting process A");
-  //   loop {
-  //     putchar('A');
-  //     // switch_context(self.proc_a.context.get_mut(), self.proc_b.context.get_mut());
-  //     self.yield_process();
-
-  //     for i in 0..30000000 {
-  //       asm!("nop");
-  //     }
-  //   }
-  // }
-
-  // unsafe fn proc_b_entry(&mut self) {
-  //   println!("starting process B");
-  //   loop {
-  //     putchar('B');
-  //     // switch_context(self.proc_b.context.get_mut(), self.proc_a.context.get_mut());
-  //     self.yield_process();
-
-  //     for i in 0..30000000 {
-  //       asm!("nop");
-  //     }
-  //   }
-  // }
-// }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Process {
