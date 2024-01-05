@@ -75,7 +75,6 @@ unsafe fn find_next_process() -> Option<&'static mut Process> {
 pub struct Process {
   pid: u32,
   state: ProcessState,
-  sp: u32,
   context: Context,
   stack: [u8; 8192],
 }
@@ -85,7 +84,6 @@ impl Process {
     Self {
       pid: pid,
       state: ProcessState::Unused,
-      sp: 0,
       context: Context::new(),
       stack: [0; 8192],
     }

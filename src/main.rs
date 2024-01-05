@@ -3,10 +3,8 @@
 
 extern crate alloc;
 
-use core::ptr;
 use core::{arch::asm, ptr::write_bytes};
 use os_rust_1000::println;
-use os_rust_1000::print::putchar;
 use os_rust_1000::process;
 use os_rust_1000::trap;
 
@@ -64,8 +62,8 @@ fn kernel_main() -> ! {
   unsafe {
     asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
     process::init();
-    process::create_process(proc_a_entry as u32);
-    process::create_process(proc_b_entry as u32);
+    process::create_process(proc_a_entry as u32).expect("Faild To Create Process");
+    process::create_process(proc_b_entry as u32).expect("Faild To Create Process");
     process::yield_process();
   }
 
