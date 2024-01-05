@@ -19,7 +19,8 @@ extern "C" {
 unsafe fn proc_a_entry() {
   println!("starting process A");
   loop {
-    putchar('A');
+    // putchar('A');
+    println!("A");
     // switch_context(self.proc_a.context.get_mut(), self.proc_b.context.get_mut());
     process::yield_process();
 
@@ -32,7 +33,8 @@ unsafe fn proc_a_entry() {
 unsafe fn proc_b_entry() {
   println!("starting process B");
   loop {
-    putchar('B');
+    // putchar('B');
+    println!("B");
     // switch_context(self.proc_b.context.get_mut(), self.proc_a.context.get_mut());
     process::yield_process();
 

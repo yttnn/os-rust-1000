@@ -32,9 +32,10 @@ pub unsafe fn create_process(pc :u32) -> Result<(), ProcessError> {
   let process = process.unwrap();
 
   process.context.ra = pc;
-  let sp = ptr::addr_of!(process.stack);
+  let sp = ptr::addr_of!(process.stack[process.stack.len() - 1]);
   process.context.sp = sp as u32;
   process.state = ProcessState::Runnable;
+  println!("create pid {}", process.pid);
   Ok(())
 }
 
@@ -56,9 +57,9 @@ pub unsafe fn yield_process() {
   // println!("2 {:?}", *next);
   CURRENT_PROCESS = next;
   // println!("3 {:?}", *next);
-  println!("yield {}", (*next).pid);
-  println!("yield [0]state {:?}", (*CURRENT_PROCESS).state);
-
+  // println!("yield {}", (*next).pid);
+  // println!("yield [0] pid {}, state {:?}", PROCESS_POOL[0].pid, PROCESS_POOL[0].state);
+  
   unsafe {
     // println!("cur: {:?}", *prev);
     // println!("next: {:?}", *next);
@@ -75,11 +76,12 @@ unsafe fn find_next_process() -> Option<&'static mut Process> {
   //   }
   // }
   let current_pid = (*CURRENT_PROCESS).pid as usize;
+  // println!("findnext cpid {}", current_pid);
   for i in 0..PROCESS_MAX {
     let process = &mut PROCESS_POOL[(current_pid + i) % PROCESS_MAX];
-    println!("pid {}, state {:?}", process.pid, process.state);
+    // println!("pid {}, state {:?}", process.pid, process.state);
     if process.state == ProcessState::Runnable && process.pid > 0 {
-      println!("ret some pid {}, state {:?}", process.pid, process.state);
+      // println!("ret some pid {}, state {:?}", process.pid, process.state);
       return Some(process);
     }
   }
