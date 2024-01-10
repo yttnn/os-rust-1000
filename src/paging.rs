@@ -56,7 +56,10 @@ impl PageTable {
     }
 
     let vpn0 = (vaddr >> 12) & 0x3ff; // virtual page number
-    let pt0_paddr = (self.entries[vpn1 as usize].entry >> 10) * (PAGE_SIZE as u32); // 2段目ページテーブルのアドレス(page_number = paddr/PAGE_SIZE)
-    self.entries[vpn0 as usize].entry = ()
+    let pt0_paddr = ((self.entries[vpn1 as usize].entry >> 10) * (PAGE_SIZE as u32)) as*mut u32; // 2段目ページテーブルの物理アドレス(page_number = paddr/PAGE_SIZE)
+    // self.entries[vpn0 as usize].entry = ()
+    unsafe {
+      pt0_paddr.offset(vpn0 as isize).write(((paddr / PAGE_SIZE) << 10) | flags | PAGE_V);
+    }
   }
 }

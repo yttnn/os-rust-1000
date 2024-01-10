@@ -82,6 +82,7 @@ pub struct Process {
   state: ProcessState,
   context: Context,
   stack: [u8; 8192],
+  page_table: u32,
 }
 
 impl Process {
@@ -91,6 +92,7 @@ impl Process {
       state: ProcessState::Unused,
       context: Context::new(),
       stack: [0; 8192],
+      page_table: 0,
     }
   }
 }
