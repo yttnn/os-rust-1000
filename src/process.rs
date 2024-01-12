@@ -1,6 +1,14 @@
 use core::{ ptr, arch::asm};
 
-use crate::{switch::switch_context, println};
+use crate::{
+  switch::switch_context, println, 
+  paging::{PageTable, self, PAGE_R, PAGE_W, PAGE_X, PAGE_SIZE, SATP_SV32},
+};
+
+extern "C" {
+  static __kernel_base: u8;
+  static __free_ram_end: u8;
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ProcessState {
@@ -24,6 +32,7 @@ pub unsafe fn init() {
   for i in 0..PROCESS_MAX {
     PROCESS_POOL[i].pid = (i + 1) as u32;
   }
+  println!("{:?}", &__kernel_base);
 }
 
 pub unsafe fn create_process(pc :u32) -> Result<(), ProcessError> {
@@ -31,11 +40,21 @@ pub unsafe fn create_process(pc :u32) -> Result<(), ProcessError> {
   if process.is_none() { return Err(ProcessError::FailedToCreateProcess); }
   let process = process.unwrap();
 
+  // let page_table = paging::alloc_page();
+  let page_table = PageTable::new(paging::alloc_page() as *mut u32);
+  process.page_table = Some(page_table);
+  let mut paddr = &__kernel_base as *const u8 as u32;
+  let ram_end_addr = &__free_ram_end as *const u8 as u32;
+  while paddr < ram_end_addr {
+    process.page_table.unwrap().map_page(paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+    paddr += PAGE_SIZE as u32;
+  }
+
   process.context.ra = pc;
   let sp = ptr::addr_of!(process.stack[process.stack.len() - 1]);
   process.context.sp = sp as u32;
   process.state = ProcessState::Runnable;
-  println!("create pid {}", process.pid);
+  println!("create pid {}, address {:?}", process.pid, process.page_table.unwrap().ptr);
   Ok(())
 }
 
@@ -52,9 +71,20 @@ pub unsafe fn yield_process() {
   let next = find_next_process();
   if next.is_none() { println!("next is none"); return; }
   let next = next.unwrap() as *mut Process;
+
+  if (*next).page_table.is_none() { panic!("page table not found!!"); }
+  println!("yield: pagetable found");
+  let next_pt_ptr = (*next).page_table.unwrap().ptr;
+  let next_pt_number = next_pt_ptr as u32 / PAGE_SIZE as u32;
+  println!("yield: {:?}, {:?}", next_pt_ptr, ptr::addr_of!(next_pt_ptr));
+  
   asm!(
-    "csrw sscratch, {}",
-    in(reg) ptr::addr_of!((*next).stack[(*next).stack.len() - 1]),
+    "sfence.vma",
+    "csrw satp, {satp}",
+    "sfence.vma",
+    "csrw sscratch, {sscratch}",
+    satp = in(reg) (SATP_SV32 | next_pt_number),
+    sscratch = in(reg) ptr::addr_of!((*next).stack[(*next).stack.len() - 1]),
   );
 
   let prev = CURRENT_PROCESS;
@@ -82,7 +112,7 @@ pub struct Process {
   state: ProcessState,
   context: Context,
   stack: [u8; 8192],
-  page_table: u32,
+  page_table: Option<PageTable>,
 }
 
 impl Process {
@@ -92,7 +122,7 @@ impl Process {
       state: ProcessState::Unused,
       context: Context::new(),
       stack: [0; 8192],
-      page_table: 0,
+      page_table: None,
     }
   }
 }

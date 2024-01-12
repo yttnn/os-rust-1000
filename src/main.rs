@@ -63,18 +63,18 @@ fn kernel_main() -> ! {
 
   unsafe {
     asm!("csrw stvec, {}", in(reg) trap::kernel_entry);
-    // process::init();
-    // process::create_process(proc_a_entry as u32).expect("Faild To Create Process");
-    // process::create_process(proc_b_entry as u32).expect("Faild To Create Process");
-    // process::yield_process();
+    process::init();
+    process::create_process(proc_a_entry as u32).expect("Faild To Create Process");
+    process::create_process(proc_b_entry as u32).expect("Faild To Create Process");
+    process::yield_process();
   }
 
-  let x = Box::new(Page::new());
-  let y = Box::new(Page::new());
-  let z = Box::new(Page::new());
-  println!("raw: {:?}", Box::into_raw(x));
-  println!("raw: {:?}", Box::into_raw(y));
-  println!("raw: {:?}", Box::into_raw(z));
+  // let x = Box::new(Page::new());
+  // let y = Box::new(Page::new());
+  // let z = Box::new(Page::new());
+  // println!("raw: {:?}", Box::into_raw(x));
+  // println!("raw: {:?}", Box::into_raw(y));
+  // println!("raw: {:?}", Box::into_raw(z));
 
   loop {}
 }

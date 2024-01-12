@@ -1,13 +1,14 @@
 use alloc::boxed::Box;
 
-const PAGE_SIZE: usize = 4096; // byte
+pub const PAGE_SIZE: usize = 4096; // byte
 const N_PAGE_ENTRY: usize = PAGE_SIZE / 4;
 
-const PAGE_V: u32 = 1 << 0; // 有効化ビット
-const PAGE_R: u32 = 1 << 1; // 読み込み可能
-const PAGE_W: u32 = 1 << 2; // 書き込み可能
-const PAGE_X: u32 = 1 << 3; // 実行可能
-const PAGE_U: u32 = 1 << 4; // ユーザーモードでアクセス可能
+pub const SATP_SV32: u32 = 1 << 31;
+pub const PAGE_V: u32 = 1 << 0; // 有効化ビット
+pub const PAGE_R: u32 = 1 << 1; // 読み込み可能
+pub const PAGE_W: u32 = 1 << 2; // 書き込み可能
+pub const PAGE_X: u32 = 1 << 3; // 実行可能
+pub const PAGE_U: u32 = 1 << 4; // ユーザーモードでアクセス可能
 
 #[repr(C, align(4096))]
 pub struct Page {
@@ -22,8 +23,9 @@ impl Page {
   }
 }
 
-pub fn alloc_pages(n: u32) -> u32 {
-  0
+pub fn alloc_page() -> *mut Page {
+  let memory = Box::new(Page::new());
+  Box::into_raw(memory)
 }
 
 
@@ -35,13 +37,22 @@ impl PageTableEntry {
 
 }
 
+pub struct Paddr(u32);
+
+#[derive(Debug, Clone, Copy)]
 pub struct PageTable {
-  entries: [PageTableEntry; N_PAGE_ENTRY],
-  ptr: *mut [u32; N_PAGE_ENTRY],
+  // entries: [PageTableEntry; N_PAGE_ENTRY],
+  pub ptr: *mut u32,
 }
 
 impl PageTable {
-  fn map_page(&mut self, vaddr: u32, paddr: u32, flags: u32) {
+  pub fn new(ptr: *mut u32) -> Self {
+    Self {
+      ptr: ptr,
+    }
+  }
+
+  pub fn map_page(&mut self, vaddr: u32, paddr: u32, flags: u32) {
     // let vpn1 = (vaddr >> 22) & 0x3ff; // virtual page number
     // if (self.entries[vpn1 as usize].entry & PAGE_V) == 0 { // 2段目がない場合、設定
     //   let memory = Box::new(Page::new());
@@ -61,10 +72,10 @@ impl PageTable {
     let vpn1 = (vaddr >> 22) & 0x3ff;
     unsafe {
       if table1.offset(vpn1 as isize) as u32 & PAGE_V == 0 {
-        let memory = Box::new(Page::new());
-        let pt1_ptr = Box::into_raw(memory);
+        // let memory = Box::new(Page::new());
+        // let pt1_ptr = Box::into_raw(memory);
+        let pt1_ptr = alloc_page();
         let p_page_number = pt1_ptr as u32 / PAGE_SIZE as u32;
-        let a = (*table1);
         table1.offset(vpn1 as isize).write((p_page_number << 10) | PAGE_V);
       }
     }
@@ -72,7 +83,8 @@ impl PageTable {
     let vpn0 = (vaddr >> 12) & 0x3ff;
     let p_page_number = paddr / PAGE_SIZE as u32;
     unsafe {
-      let table0 = ((table1.offset(vpn1 as isize) as u32 >> 10) * PAGE_SIZE as u32) as *mut u32; // 2段目ページテーブルの物理アドレス(page_number = paddr/PAGE_SIZE)
+      let page_number = *(table1.offset(vpn1 as isize));
+      let table0 = ((page_number >> 10) * PAGE_SIZE as u32) as *mut u32; // 2段目ページテーブルの物理アドレス(page_number = paddr/PAGE_SIZE)
       table0.offset(vpn0 as isize).write((p_page_number << 10) | flags | PAGE_V);
     }
 
