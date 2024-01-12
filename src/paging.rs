@@ -26,12 +26,6 @@ pub fn alloc_pages(n: u32) -> u32 {
   0
 }
 
-pub fn map_page(table1: u32, vaddr: u32, paddr: u32, flags: u32) {
-  let vnp1 = (vaddr >> 22) & 0x3ff;
-
-  let vpn0 = (vaddr >> 12) & 0x3ff;
-
-}
 
 pub struct PageTableEntry {
   entry: u32,   // 31~20bit: ppn1, 19~10bit: ppn0, 9~0bit: flags
@@ -43,23 +37,44 @@ impl PageTableEntry {
 
 pub struct PageTable {
   entries: [PageTableEntry; N_PAGE_ENTRY],
+  ptr: *mut [u32; N_PAGE_ENTRY],
 }
 
 impl PageTable {
   fn map_page(&mut self, vaddr: u32, paddr: u32, flags: u32) {
-    let vpn1 = (vaddr >> 22) & 0x3ff; // virtual page number
-    if (self.entries[vpn1 as usize].entry & PAGE_V) == 0 { // 2段目がない場合、設定
-      let memory = Box::new(Page::new());
-      let pt1_paddr = Box::into_raw(memory);
-      let p_page_number = pt1_paddr as u32 / PAGE_SIZE as u32;
-      self.entries[vpn1 as usize].entry = (p_page_number << 10) | PAGE_V;
+    // let vpn1 = (vaddr >> 22) & 0x3ff; // virtual page number
+    // if (self.entries[vpn1 as usize].entry & PAGE_V) == 0 { // 2段目がない場合、設定
+    //   let memory = Box::new(Page::new());
+    //   let pt1_paddr = Box::into_raw(memory);
+    //   let p_page_number = pt1_paddr as u32 / PAGE_SIZE as u32;
+    //   self.entries[vpn1 as usize].entry = (p_page_number << 10) | PAGE_V;
+    // }
+
+    // let vpn0 = (vaddr >> 12) & 0x3ff; // virtual page number
+    // let pt0_paddr = ((self.entries[vpn1 as usize].entry >> 10) * (PAGE_SIZE as u32)) as*mut u32; // 2段目ページテーブルの物理アドレス(page_number = paddr/PAGE_SIZE)
+    // let p_page_number = paddr / PAGE_SIZE as u32;
+    // unsafe {
+    //   pt0_paddr.offset(vpn0 as isize).write((p_page_number << 10) | flags | PAGE_V);
+    // }
+   
+    let mut table1 = self.ptr;
+    let vpn1 = (vaddr >> 22) & 0x3ff;
+    unsafe {
+      if table1.offset(vpn1 as isize) as u32 & PAGE_V == 0 {
+        let memory = Box::new(Page::new());
+        let pt1_ptr = Box::into_raw(memory);
+        let p_page_number = pt1_ptr as u32 / PAGE_SIZE as u32;
+        let a = (*table1);
+        table1.offset(vpn1 as isize).write((p_page_number << 10) | PAGE_V);
+      }
     }
 
-    let vpn0 = (vaddr >> 12) & 0x3ff; // virtual page number
-    let pt0_paddr = ((self.entries[vpn1 as usize].entry >> 10) * (PAGE_SIZE as u32)) as*mut u32; // 2段目ページテーブルの物理アドレス(page_number = paddr/PAGE_SIZE)
-    // self.entries[vpn0 as usize].entry = ()
+    let vpn0 = (vaddr >> 12) & 0x3ff;
+    let p_page_number = paddr / PAGE_SIZE as u32;
     unsafe {
-      pt0_paddr.offset(vpn0 as isize).write(((paddr / PAGE_SIZE) << 10) | flags | PAGE_V);
+      let table0 = ((table1.offset(vpn1 as isize) as u32 >> 10) * PAGE_SIZE as u32) as *mut u32; // 2段目ページテーブルの物理アドレス(page_number = paddr/PAGE_SIZE)
+      table0.offset(vpn0 as isize).write((p_page_number << 10) | flags | PAGE_V);
     }
+
   }
 }
